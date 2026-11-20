@@ -1,0 +1,26 @@
+# Backend
+# Not ours to redistribute - a real copy of a Microsoft system binary, used only
+# as a local false-positive test fixture. See backend/samples/README.md.
+backend/samples/clean_sample.exe
+backend/venv/
+backend/__pycache__/
+backend/app/__pycache__/
+backend/.pytest_cache/
+**/__pycache__/
+*.pyc
+
+# Secrets / local config - never commit (use the *.env.example files)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/

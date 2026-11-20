@@ -1,0 +1,14 @@
+# Pinned to versions with no known advisories (pip-audit clean, 2026-11-20).
+# Re-run `python -m pip_audit -r requirements.txt` before every release.
+fastapi==0.165.0
+starlette==1.10.0
+uvicorn[standard]==0.54.0
+python-multipart==0.0.34
+pefile==2024.8.26
+yara-python==4.5.4
+jinja2==3.1.6
+pydantic==2.14.4
+
+# Test-only
+pytest==9.2.0
+httpx==0.28.1

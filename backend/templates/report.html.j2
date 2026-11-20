@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="{{ lang }}">
+<head>
+<meta charset="utf-8">
+{# The saved report is opened from disk, outside the API's headers - this meta
+   CSP keeps it inert: no scripts, no network requests, no images/forms. #}
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<title>{{ t.title }} - {{ report.file.name }}</title>
+<style>
+  body { font-family: system-ui, Segoe UI, sans-serif; background:#0b0d12; color:#e6e8ef; max-width: 900px; margin: 32px auto; padding: 0 16px; }
+  h1 { font-size: 22px; }
+  h2 { font-size: 16px; margin-top: 28px; border-bottom: 1px solid #2a2d38; padding-bottom: 6px; }
+  .score-badge { display:inline-block; padding: 10px 18px; border-radius: 8px; font-size: 28px; font-weight: 700; }
+  .verdict-Clean { background:#143d2b; color:#4ade80; }
+  .verdict-Suspicious { background:#4a3a0f; color:#fbbf24; }
+  .verdict-Likely-Malicious { background:#4a1f0f; color:#fb923c; }
+  .verdict-Malicious { background:#4a0f1a; color:#f87171; }
+  table { width:100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+  th, td { text-align:left; padding: 6px 8px; border-bottom: 1px solid #22242d; }
+  code { background:#161822; padding:2px 6px; border-radius:4px; font-size:12px; }
+  ul { padding-left: 18px; }
+  .meta { color:#9aa0ae; font-size:13px; }
+  .az-note { background:#2a1f0f; border-left:3px solid #fbbf24; padding:10px; margin-top:12px; font-size:13px; }
+</style>
+</head>
+<body>
+  <h1>{{ t.title }}</h1>
+  <p class="meta">{{ t.file }}: <code>{{ report.file.name }}</code> &middot; {{ t.generated }}: {{ report.generated_at }}</p>
+
+  <span class="score-badge verdict-{{ report.score.verdict | replace(' ', '-') }}">{{ report.score.value }}/100 - {{ report.score.verdict }}</span>
+
+  <h2>{{ t.reasons }}</h2>
+  <ul>
+    {% for r in report.score.reasons %}<li>{{ r }}</li>{% endfor %}
+    {% if not report.score.reasons %}<li>No risk indicators found.</li>{% endif %}
+  </ul>
+
+  <h2>{{ t.attack }}</h2>
+  <ul>
+    {% for a in report.attack %}<li><code>{{ a.technique }}</code> - {{ a.name }}: {{ a.reason }}</li>{% endfor %}
+    {% if not report.attack %}<li>None mapped.</li>{% endif %}
+  </ul>
+
+  <h2>{{ t.yara }}</h2>
+  <table>
+    <tr><th>Rule</th><th>Severity</th><th>Description</th></tr>
+    {% for y in report.yara %}
+    <tr><td>{{ y.rule }}</td><td>{{ y.severity }}</td><td>{{ y.description }}</td></tr>
+    {% endfor %}
+  </table>
+
+  <h2>{{ t.sections }}</h2>
+  <table>
+    <tr><th>Name</th><th>Raw size</th><th>Virtual size</th><th>Entropy</th></tr>
+    {% for s in report.pe.sections %}
+    <tr><td>{{ s.name }}</td><td>{{ s.raw_size }}</td><td>{{ s.virtual_size }}</td><td>{{ s.entropy }}</td></tr>
+    {% endfor %}
+  </table>
+
+  <h2>{{ t.anomalies }}</h2>
+  <ul>
+    {% for a in report.pe.anomalies %}<li>[{{ a.type }}] {{ a.detail }}</li>{% endfor %}
+    {% if not report.pe.anomalies %}<li>None.</li>{% endif %}
+  </ul>
+
+  <h2>{{ t.iocs }}</h2>
+  <p><strong>{{ t.urls }}:</strong> {{ report.iocs.urls | join(', ') if report.iocs.urls else '-' }}</p>
+  <p><strong>{{ t.domains }}:</strong> {{ report.iocs.domains | join(', ') if report.iocs.domains else '-' }}</p>
+  <p><strong>{{ t.ips }}:</strong> {{ report.iocs.ips | join(', ') if report.iocs.ips else '-' }}</p>
+  <p><strong>{{ t.private_ips }}:</strong> {{ report.iocs.private_ips | join(', ') if report.iocs.private_ips else '-' }}</p>
+  <p><strong>{{ t.hashes }}:</strong> {{ (report.iocs.hashes.sha256 + report.iocs.hashes.md5) | join(', ') if (report.iocs.hashes.sha256 or report.iocs.hashes.md5) else '-' }}</p>
+
+  {% if report.iocs.az_related %}
+  <div class="az-note">{{ t.az_note }}</div>
+  {% endif %}
+
+  <h2>{{ t.limitations }}</h2>
+  <p class="meta">{{ t.limitations_text }}</p>
+</body>
+</html>
