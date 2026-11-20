@@ -1,6 +1,6 @@
 // Default matches the README's documented backend port.
 const API_BASE = (import.meta.env.VITE_API_BASE || "http://127.0.0.1:8002").replace(/\/+$/, "");
-// Optional - only for a shared deployment where the backend sets GOZETCI_API_KEY.
+// Optional - only for a shared deployment where the backend sets IOCTOPUS_API_KEY.
 // Note: anything in VITE_* is embedded in the built JS bundle, so this is a
 // light access control for a trusted LAN, not a secret against bundle readers.
 const API_KEY = import.meta.env.VITE_API_KEY || "";

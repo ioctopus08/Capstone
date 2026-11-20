@@ -23,7 +23,7 @@ function cspPlugin(apiBase) {
     "form-action 'none'",
   ].join('; ')
   return {
-    name: 'gozetci-csp',
+    name: 'ioctopus-csp',
     apply: 'build',
     transformIndexHtml(html) {
       return html.replace(

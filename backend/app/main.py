@@ -28,10 +28,10 @@ from app.security import (
 from app.strings_extract import extract_strings
 from app.yara_scan import engine_status, scan_bytes
 
-logger = logging.getLogger("gozetci")
+logger = logging.getLogger("ioctopus")
 
 app = FastAPI(
-    title="Gozetci Static Triage API",
+    title="IOCtopus Static Triage API",
     version="0.2.0",
     docs_url="/docs" if settings.enable_docs else None,
     redoc_url=None,

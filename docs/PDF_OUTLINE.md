@@ -18,7 +18,7 @@ what it shows.
 
 ## 2. Proposed solution and purpose
 
-One sentence: *Gözətçi is an offline static-triage tool that takes a suspicious Windows file
+One sentence: *IOCtopus is an offline static-triage tool that takes a suspicious Windows file
 and returns, in seconds, an explained risk score, MITRE ATT&CK mapping, extracted IOCs, and a
 bilingual (AZ/EN) report - without the file ever leaving the analyst's machine.*
 

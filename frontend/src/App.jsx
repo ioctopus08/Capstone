@@ -69,7 +69,7 @@ export default function App() {
         <header className="mb-8 flex flex-wrap items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold">
-              <span className="text-violet-400">Gözətçi</span>
+              <span className="text-violet-400">IOCtopus</span>
             </h1>
             <p className="mt-1 max-w-xl text-sm text-slate-400">{t.tagline}</p>
           </div>

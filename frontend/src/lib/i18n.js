@@ -1,6 +1,6 @@
 export const UI = {
   en: {
-    appName: "Gözətçi",
+    appName: "IOCtopus",
     tagline: "Offline static malware triage for Azerbaijani SOCs, banks and universities",
     dropzone: "Drop a Windows PE file here, or click to browse",
     analyzing: "Analyzing...",
@@ -34,7 +34,7 @@ export const UI = {
     footer: "Built for the hackathon static-triage track. Capstone roadmap: sandbox execution, analyst dashboard, MISP/TheHive integration.",
   },
   az: {
-    appName: "Gözətçi",
+    appName: "IOCtopus",
     tagline: "Azərbaycan SOC-ları, bankları və universitetləri üçün tam oflayn statik zərərli proqram triyajı",
     dropzone: "Windows PE faylını bura buraxın və ya seçmək üçün klikləyin",
     analyzing: "Təhlil edilir...",

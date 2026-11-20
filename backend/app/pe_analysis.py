@@ -20,7 +20,7 @@ ANTI_DEBUG_APIS = {"IsDebuggerPresent", "CheckRemoteDebuggerPresent", "NtQueryIn
 NETWORK_APIS = {"InternetOpenA", "InternetOpenUrlA", "URLDownloadToFileA", "WinHttpOpen", "send", "recv", "connect"}
 KEYLOG_APIS = {"GetAsyncKeyState", "GetKeyState", "SetWindowsHookExA", "SetWindowsHookExW"}
 
-logger = logging.getLogger("gozetci.pe")
+logger = logging.getLogger("ioctopus.pe")
 
 # Names inside a hostile PE are attacker-controlled: strip control characters
 # and bound their length/count before they reach the JSON/HTML report.

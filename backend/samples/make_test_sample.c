@@ -1,5 +1,5 @@
 /*
- * Safe synthetic test sample for the Gozetci static triage demo.
+ * Safe synthetic test sample for the IOCtopus static triage demo.
  *
  * This program imports process-injection APIs WITHOUT EVER CALLING THEM
  * (they are referenced only to appear in the import table, then the
@@ -44,6 +44,6 @@ int main(void) {
     }
     wprintf(L"%ls\n", wide_decoy);
 
-    printf("This is a harmless demo binary for the Gozetci hackathon demo.\n");
+    printf("This is a harmless demo binary for the IOCtopus hackathon demo.\n");
     return 0;
 }

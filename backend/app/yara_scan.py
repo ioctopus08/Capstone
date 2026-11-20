@@ -8,7 +8,7 @@ try:
 except ImportError:
     yara = None
 
-logger = logging.getLogger("gozetci.yara")
+logger = logging.getLogger("ioctopus.yara")
 
 RULES_DIR = os.path.join(os.path.dirname(__file__), "..", "rules")
 

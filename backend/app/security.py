@@ -1,4 +1,4 @@
-"""Security configuration and hardening for the Gozetci API.
+"""Security configuration and hardening for the IOCtopus API.
 
 Threat model: this service accepts *hostile* files by design (suspected malware)
 and is meant to run on an analyst's own machine. The main risks are therefore:
@@ -40,22 +40,22 @@ def _env_bool(name: str, default: bool = False) -> bool:
 class Settings:
     # Browser origins allowed to call the API (the Vite dev server by default).
     allowed_origins = _env_list(
-        "GOZETCI_ALLOWED_ORIGINS",
+        "IOCTOPUS_ALLOWED_ORIGINS",
         "http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173,http://127.0.0.1:4173",
     )
     # Host header allowlist - blocks DNS-rebinding attacks against the local API.
-    allowed_hosts = _env_list("GOZETCI_ALLOWED_HOSTS", "localhost,127.0.0.1,testserver")
+    allowed_hosts = _env_list("IOCTOPUS_ALLOWED_HOSTS", "localhost,127.0.0.1,testserver")
     # Optional shared secret. Unset = no auth (fine for localhost-only use).
-    api_key = os.getenv("GOZETCI_API_KEY", "")
-    max_upload_bytes = _env_int("GOZETCI_MAX_UPLOAD_MB", 50) * 1024 * 1024
+    api_key = os.getenv("IOCTOPUS_API_KEY", "")
+    max_upload_bytes = _env_int("IOCTOPUS_MAX_UPLOAD_MB", 50) * 1024 * 1024
     # Analysis requests per client IP per minute.
-    rate_limit_per_minute = _env_int("GOZETCI_RATE_LIMIT_PER_MINUTE", 30)
+    rate_limit_per_minute = _env_int("IOCTOPUS_RATE_LIMIT_PER_MINUTE", 30)
     # Analyses allowed to run at the same time (each is CPU-heavy).
-    max_concurrent_analyses = _env_int("GOZETCI_MAX_CONCURRENT", 2)
+    max_concurrent_analyses = _env_int("IOCTOPUS_MAX_CONCURRENT", 2)
     # Seconds a request may wait for a free analysis slot before getting 503.
-    queue_timeout_seconds = _env_int("GOZETCI_QUEUE_TIMEOUT", 30)
+    queue_timeout_seconds = _env_int("IOCTOPUS_QUEUE_TIMEOUT", 30)
     # Interactive /docs is off by default - it's an unnecessary attack surface.
-    enable_docs = _env_bool("GOZETCI_ENABLE_DOCS", False)
+    enable_docs = _env_bool("IOCTOPUS_ENABLE_DOCS", False)
 
 
 settings = Settings()

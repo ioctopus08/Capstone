@@ -1,4 +1,4 @@
-# Gözətçi - Offline Static Malware Triage
+# IOCtopus - Offline Static Malware Triage
 
 A fully offline static-analysis triage tool for Windows PE files: PE/import parsing, YARA
 (including an Azerbaijan-specific pack), IOC extraction with false-positive filtering, an
@@ -146,11 +146,11 @@ The tool accepts hostile files by design, so the service itself is hardened
 | Information leakage | Generic 500 errors (details only in server log), `/docs` disabled, no `Server` header, `Cache-Control: no-store`, `Referrer-Policy: no-referrer` |
 | Clickjacking / sniffing | `X-Frame-Options: DENY`, `frame-ancestors 'none'`, `nosniff` |
 | Vulnerable dependencies | All pins `pip-audit` / `npm audit` clean; re-run before every release |
-| Unauthorized use of a shared deployment | Optional `GOZETCI_API_KEY` (`X-API-Key` header, constant-time compare) |
+| Unauthorized use of a shared deployment | Optional `IOCTOPUS_API_KEY` (`X-API-Key` header, constant-time compare) |
 
 Settings are environment variables - see `backend/.env.example`. To expose the backend on a
-LAN on purpose: `--host 0.0.0.0`, add the IP to `GOZETCI_ALLOWED_HOSTS` and the frontend URL to
-`GOZETCI_ALLOWED_ORIGINS`, and set `GOZETCI_API_KEY`.
+LAN on purpose: `--host 0.0.0.0`, add the IP to `IOCTOPUS_ALLOWED_HOSTS` and the frontend URL to
+`IOCTOPUS_ALLOWED_ORIGINS`, and set `IOCTOPUS_API_KEY`.
 
 Dependency audit:
 
