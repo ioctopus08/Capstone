@@ -22,6 +22,12 @@
   ul { padding-left: 18px; }
   .meta { color:#9aa0ae; font-size:13px; }
   .az-note { background:#2a1f0f; border-left:3px solid #fbbf24; padding:10px; margin-top:12px; font-size:13px; }
+  .kv th { width: 34%; color:#9aa0ae; font-weight: 500; }
+  .flag { color:#f87171; font-weight:600; }
+  .ok { color:#4ade80; }
+  .mono { font-family: ui-monospace, Consolas, monospace; font-size: 12px; word-break: break-all; }
+  details { margin: 4px 0; }
+  summary { cursor: pointer; }
 </style>
 </head>
 <body>
@@ -29,6 +35,14 @@
   <p class="meta">{{ t.file }}: <code>{{ report.file.name }}</code> &middot; {{ t.generated }}: {{ report.generated_at }}</p>
 
   <span class="score-badge verdict-{{ report.score.verdict | replace(' ', '-') }}">{{ report.score.value }}/100 - {{ report.score.verdict }}</span>
+
+  <table class="kv">
+    <tr><th>Size</th><td>{{ report.file.size }} B</td></tr>
+    <tr><th>MD5</th><td class="mono">{{ report.file.md5 }}</td></tr>
+    <tr><th>SHA1</th><td class="mono">{{ report.file.sha1 }}</td></tr>
+    <tr><th>SHA256</th><td class="mono">{{ report.file.sha256 }}</td></tr>
+    <tr><th>imphash</th><td class="mono">{{ report.file.imphash or '-' }}</td></tr>
+  </table>
 
   <h2>{{ t.reasons }}</h2>
   <ul>
@@ -50,6 +64,26 @@
     {% endfor %}
   </table>
 
+  {% set h = report.pe.headers %}
+  {% if h %}
+  <h2>{{ t.pe_header }}</h2>
+  <table class="kv">
+    <tr><th>{{ t.machine }}</th><td>{{ h.machine }}</td></tr>
+    <tr><th>{{ t.file_type }}</th><td>{{ h.file_type }}</td></tr>
+    <tr><th>{{ t.compile_time }}</th><td>{% if h.compile_time %}{{ h.compile_time }}{% else %}<span class="flag">{{ t.stripped }}</span>{% endif %}</td></tr>
+    <tr><th>{{ t.entry_point }}</th><td class="mono">{{ h.entry_point }}</td></tr>
+    <tr><th>{{ t.image_base }}</th><td class="mono">{{ h.image_base }}</td></tr>
+    <tr><th>{{ t.subsystem }}</th><td>{{ h.subsystem }}</td></tr>
+    <tr><th>{{ t.linker }}</th><td>{{ h.linker_version }}</td></tr>
+    <tr><th>{{ t.protections }}</th><td>
+      {% for label, on in [('ASLR', h.aslr), ('DEP', h.dep), ('CFG', h.cfg), ('HighEntropyVA', h.high_entropy_va)] %}
+      <span class="{{ 'ok' if on else 'flag' }}">{{ label }} {{ '✓' if on else '✗' }}</span>{% if not loop.last %} &middot; {% endif %}
+      {% endfor %}
+    </td></tr>
+    <tr><th>{{ t.signature }}</th><td>{{ t.present if h.embedded_signature else t.absent }}<br><span class="meta">{{ t.signature_note }}</span></td></tr>
+  </table>
+  {% endif %}
+
   <h2>{{ t.sections }}</h2>
   <table>
     <tr><th>Name</th><th>Raw size</th><th>Virtual size</th><th>Entropy</th></tr>
@@ -64,6 +98,26 @@
     {% if not report.pe.anomalies %}<li>None.</li>{% endif %}
   </ul>
 
+  <h2>{{ t.imports }}</h2>
+  {% set imports = report.pe.imports or {} %}
+  {% set api_total = imports.values() | map('length') | sum %}
+  <p class="meta">{{ t.imports_summary.format(apis=api_total, dlls=imports | length) }}</p>
+  {% if report.pe.suspicious_imports %}
+  <table>
+    <tr><th>{{ t.suspicious_imports }}</th><th>DLL</th><th>{{ t.category }}</th></tr>
+    {% for s in report.pe.suspicious_imports %}
+    <tr><td class="mono flag">{{ s.api }}</td><td class="mono">{{ s.dll }}</td><td>{{ s.category }}</td></tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+  {% set flagged = report.pe.suspicious_imports | map(attribute='api') | list %}
+  {% for dll, funcs in imports.items() %}
+  <details><summary class="mono">{{ dll }} ({{ funcs | length }})</summary>
+    <p class="mono">{% for f in funcs %}<span class="{{ 'flag' if f in flagged else '' }}">{{ f }}</span>{% if not loop.last %}, {% endif %}{% endfor %}</p>
+  </details>
+  {% endfor %}
+  {% if not imports %}<p>{{ t.none }}</p>{% endif %}
+
   <h2>{{ t.iocs }}</h2>
   <p><strong>{{ t.urls }}:</strong> {{ report.iocs.urls | join(', ') if report.iocs.urls else '-' }}</p>
   <p><strong>{{ t.domains }}:</strong> {{ report.iocs.domains | join(', ') if report.iocs.domains else '-' }}</p>
@@ -71,8 +125,24 @@
   <p><strong>{{ t.private_ips }}:</strong> {{ report.iocs.private_ips | join(', ') if report.iocs.private_ips else '-' }}</p>
   <p><strong>{{ t.hashes }}:</strong> {{ (report.iocs.hashes.sha256 + report.iocs.hashes.md5) | join(', ') if (report.iocs.hashes.sha256 or report.iocs.hashes.md5) else '-' }}</p>
 
+  <p><strong>{{ t.registry }}:</strong> <span class="mono">{{ report.iocs.registry_keys | join(', ') if report.iocs.registry_keys else '-' }}</span></p>
+  <p><strong>{{ t.mutexes }}:</strong> <span class="mono">{{ report.iocs.mutexes | join(', ') if report.iocs.mutexes else '-' }}</span></p>
+
   {% if report.iocs.az_related %}
   <div class="az-note">{{ t.az_note }}</div>
+  {% endif %}
+
+  {% if report.strings %}
+  {% set st = report.strings %}
+  <h2>{{ t.interesting_strings }}</h2>
+  <p class="meta">{{ t.strings_summary.format(total=st.total, ascii=st.ascii, wide=st.wide) }}</p>
+  {% for key in ['autorun_registry', 'registry', 'mutexes', 'paths', 'commands', 'user_agents'] %}
+  {% set items = st.interesting[key] %}
+  {% if items %}
+  <p><strong>{{ t.autorun if key == 'autorun_registry' else t[key] }}</strong></p>
+  <ul>{% for s in items %}<li class="mono {{ 'flag' if key in ('autorun_registry', 'commands') else '' }}">{{ s }}</li>{% endfor %}</ul>
+  {% endif %}
+  {% endfor %}
   {% endif %}
 
   <h2>{{ t.limitations }}</h2>

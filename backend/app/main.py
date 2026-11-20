@@ -11,6 +11,7 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 
 from app.attack_mapping import map_attack_techniques
+from app.interesting_strings import extract_interesting_strings
 from app.ioc_extract import extract_iocs
 from app.pe_analysis import analyze_pe, file_hashes
 from app.report import render_html_report
@@ -71,6 +72,11 @@ def build_report(filename: str, data: bytes) -> dict:
     pe_result = analyze_pe(data)
     strings = extract_strings(data)
     iocs = extract_iocs(strings["all"])
+    interesting = extract_interesting_strings(strings["all"])
+    # Registry keys and mutex names are host-based IOCs (static view; the
+    # sandbox stage will add the runtime ones).
+    iocs["registry_keys"] = interesting["registry"]
+    iocs["mutexes"] = interesting["mutexes"]
     yara_matches = scan_bytes(data)
     attack_findings = map_attack_techniques(pe_result.get("_all_apis", []))
     score = compute_score(pe_result, yara_matches, attack_findings, iocs)
@@ -87,6 +93,12 @@ def build_report(filename: str, data: bytes) -> dict:
             "imphash": pe_result.get("imphash"),
         },
         "pe": pe_public,
+        "strings": {
+            "total": len(strings["all"]),
+            "ascii": len(strings["ascii"]),
+            "wide": len(strings["wide"]),
+            "interesting": interesting,
+        },
         "yara": yara_matches,
         "iocs": iocs,
         "attack": attack_findings,

@@ -21,8 +21,135 @@ function Pill({ children, tone = "slate" }) {
 
 const SEVERITY_TONE = { high: "red", medium: "amber", low: "slate", info: "violet" };
 
+function KV({ label, children }) {
+  return (
+    <div className="flex justify-between gap-4 border-t border-slate-800 py-1.5 first:border-t-0">
+      <dt className="text-slate-500">{label}</dt>
+      <dd className="min-w-0 text-right text-slate-200">{children}</dd>
+    </div>
+  );
+}
+
+function Flag({ on, label }) {
+  return <span className={on ? "text-emerald-400" : "text-red-400"}>{label} {on ? "✓" : "✗"}</span>;
+}
+
+function PeHeader({ headers, t }) {
+  if (!headers) return <p className="text-slate-500">{t.noFindings}</p>;
+  return (
+    <dl className="text-sm">
+      <KV label={t.machine}>{headers.machine}</KV>
+      <KV label={t.fileType}>{headers.file_type}</KV>
+      <KV label={t.compileTime}>
+        {headers.compile_time ? headers.compile_time.replace("T", " ").replace("+00:00", " UTC") : <span className="text-red-400">{t.stripped}</span>}
+      </KV>
+      <KV label={t.entryPoint}><span className="font-mono">{headers.entry_point}</span></KV>
+      <KV label={t.imageBase}><span className="font-mono">{headers.image_base}</span></KV>
+      <KV label={t.subsystem}>{headers.subsystem}</KV>
+      <KV label={t.linker}>{headers.linker_version}</KV>
+      <KV label={t.protections}>
+        <span className="inline-flex flex-wrap justify-end gap-x-2">
+          <Flag on={headers.aslr} label="ASLR" />
+          <Flag on={headers.dep} label="DEP" />
+          <Flag on={headers.cfg} label="CFG" />
+        </span>
+      </KV>
+      <KV label={t.signature}>
+        <span title={t.signatureNote}>{headers.embedded_signature ? t.present : t.absent}</span>
+      </KV>
+      {!headers.embedded_signature && <p className="pt-1 text-xs text-slate-500">{t.signatureNote}</p>}
+    </dl>
+  );
+}
+
+function Imports({ imports, suspicious, t }) {
+  const dlls = Object.entries(imports || {});
+  const total = dlls.reduce((n, [, funcs]) => n + funcs.length, 0);
+  const flagged = new Set((suspicious || []).map((s) => s.api));
+  return (
+    <div className="space-y-3 text-sm">
+      <p className="text-slate-400">{t.importsSummary(total, dlls.length)}</p>
+      {suspicious?.length > 0 && (
+        <div>
+          <p className="mb-1.5 text-slate-500">{t.notableApis}</p>
+          <ul className="space-y-1">
+            {suspicious.map((s, i) => (
+              <li key={i} className="flex flex-wrap items-center gap-2">
+                <Pill tone="red">{s.category}</Pill>
+                <span className="font-mono text-red-400">{s.api}</span>
+                <span className="font-mono text-xs text-slate-500">{s.dll}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {dlls.length > 0 && (
+        <details className="rounded-lg border border-slate-800 p-2">
+          <summary className="cursor-pointer text-slate-400">{t.showAll}</summary>
+          <div className="mt-2 max-h-80 space-y-2 overflow-y-auto pr-1">
+            {dlls.map(([dll, funcs]) => (
+              <div key={dll}>
+                <p className="font-mono text-xs text-slate-300">
+                  {dll} <span className="text-slate-600">({funcs.length})</span>
+                </p>
+                <p className="break-words font-mono text-xs leading-relaxed text-slate-500">
+                  {funcs.map((f, i) => (
+                    <span key={i} className={flagged.has(f) ? "font-semibold text-red-400" : ""}>
+                      {f}
+                      {i < funcs.length - 1 ? ", " : ""}
+                    </span>
+                  ))}
+                </p>
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
+    </div>
+  );
+}
+
+const STRING_CATEGORIES = [
+  ["autorun_registry", "autorun", "red"],
+  ["registry", "registry", "slate"],
+  ["mutexes", "mutexes", "amber"],
+  ["paths", "paths", "slate"],
+  ["commands", "commands", "red"],
+  ["user_agents", "userAgents", "amber"],
+];
+
+function InterestingStrings({ strings, t }) {
+  if (!strings) return null;
+  const groups = STRING_CATEGORIES.filter(([key]) => strings.interesting?.[key]?.length);
+  return (
+    <div className="space-y-4 text-sm">
+      <p className="text-slate-400">{t.stringsSummary(strings.total, strings.ascii, strings.wide)}</p>
+      {groups.length === 0 ? (
+        <p className="text-slate-500">{t.noFindings}</p>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2">
+          {groups.map(([key, labelKey, tone]) => (
+            <div key={key} className="min-w-0">
+              <p className="mb-1.5 flex items-center gap-2 text-slate-500">
+                {t[labelKey]} <Pill tone={tone}>{strings.interesting[key].length}</Pill>
+              </p>
+              <ul className="max-h-48 space-y-1 overflow-y-auto">
+                {strings.interesting[key].map((s, i) => (
+                  <li key={i} className={`break-all font-mono text-xs ${tone === "red" ? "text-red-400" : "text-slate-300"}`}>
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ReportView({ report, t }) {
-  const { file, pe, yara, iocs, attack, score } = report;
+  const { file, pe, yara, iocs, attack, score, strings } = report;
 
   return (
     <div className="space-y-6">
@@ -106,10 +233,35 @@ export default function ReportView({ report, t }) {
             {iocs.private_ips.length ? iocs.private_ips.map((ip, i) => <p key={i} className="font-mono text-slate-400">{ip}</p>) : <p className="text-slate-600">-</p>}
           </div>
         </div>
+        {(iocs.registry_keys?.length > 0 || iocs.mutexes?.length > 0) && (
+          <div className="mt-3 grid gap-3 border-t border-slate-800 pt-3 text-sm md:grid-cols-2">
+            <div className="min-w-0">
+              <p className="mb-1 text-slate-500">{t.registry}</p>
+              {iocs.registry_keys?.length ? iocs.registry_keys.map((k, i) => <p key={i} className="break-all font-mono text-amber-400">{k}</p>) : <p className="text-slate-600">-</p>}
+            </div>
+            <div className="min-w-0">
+              <p className="mb-1 text-slate-500">{t.mutexes}</p>
+              {iocs.mutexes?.length ? iocs.mutexes.map((m, i) => <p key={i} className="break-all font-mono text-amber-400">{m}</p>) : <p className="text-slate-600">-</p>}
+            </div>
+          </div>
+        )}
         {iocs.az_related.length > 0 && (
           <div className="mt-4 rounded-lg border border-amber-800 bg-amber-950/40 p-3 text-sm text-amber-300">{t.azNote}</div>
         )}
       </Section>
+
+      <Section title={t.interestingStrings}>
+        <InterestingStrings strings={strings} t={t} />
+      </Section>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <Section title={t.peHeader}>
+          <PeHeader headers={pe.headers} t={t} />
+        </Section>
+        <Section title={t.imports}>
+          <Imports imports={pe.imports} suspicious={pe.suspicious_imports} t={t} />
+        </Section>
+      </div>
 
       <div className="grid gap-4 md:grid-cols-2">
         <Section title={t.sections}>

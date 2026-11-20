@@ -20,7 +20,7 @@ function stixString(value) {
 
 const HEX64 = /^[a-f0-9]{64}$/i;
 
-function indicator(pattern, description, now) {
+function indicator(pattern, description, now, types = ["malicious-activity"]) {
   return {
     type: "indicator",
     spec_version: "2.1",
@@ -31,7 +31,7 @@ function indicator(pattern, description, now) {
     pattern,
     pattern_type: "stix",
     valid_from: now,
-    indicator_types: ["malicious-activity"],
+    indicator_types: types,
     description,
   };
 }
@@ -45,19 +45,29 @@ export function buildStixBundle(report) {
   const now = new Date().toISOString();
   const objects = [];
   const iocs = report.iocs || {};
+  // A file the triage judged Clean must not push its strings (e.g. its own
+  // settings registry key) into a CERT feed labelled as malicious.
+  const types = report.score?.verdict === "Clean" ? ["unknown"] : ["malicious-activity"];
+  const add = (pattern, description) => objects.push(indicator(pattern, description, now, types));
 
   for (const url of iocs.urls || []) {
-    objects.push(indicator(`[url:value = '${stixString(refang(url))}']`, "URL observed in sample strings", now));
+    add(`[url:value = '${stixString(refang(url))}']`, "URL observed in sample strings");
   }
   for (const domain of iocs.domains || []) {
-    objects.push(indicator(`[domain-name:value = '${stixString(refang(domain))}']`, "Domain observed in sample strings", now));
+    add(`[domain-name:value = '${stixString(refang(domain))}']`, "Domain observed in sample strings");
   }
   for (const ip of iocs.ips || []) {
-    objects.push(indicator(`[ipv4-addr:value = '${stixString(ip)}']`, "Public IP observed in sample strings", now));
+    add(`[ipv4-addr:value = '${stixString(ip)}']`, "Public IP observed in sample strings");
+  }
+  for (const key of iocs.registry_keys || []) {
+    add(`[windows-registry-key:key = '${stixString(key)}']`, "Registry key observed in sample strings");
+  }
+  for (const name of iocs.mutexes || []) {
+    add(`[mutex:name = '${stixString(name)}']`, "Mutex / named object observed in sample strings");
   }
   for (const sha256 of iocs.hashes?.sha256 || []) {
     if (!HEX64.test(sha256)) continue;
-    objects.push(indicator(`[file:hashes.'SHA-256' = '${sha256}']`, "SHA-256 found inside sample (embedded reference hash)", now));
+    add(`[file:hashes.'SHA-256' = '${sha256}']`, "SHA-256 found inside sample (embedded reference hash)");
   }
 
   // One indicator for the analyzed file itself; YARA hits go in its description
@@ -67,7 +77,7 @@ export function buildStixBundle(report) {
     const rules = (report.yara || []).map((y) => y.rule).filter(Boolean);
     const verdict = report.score ? ` - verdict ${report.score.verdict} (${report.score.value}/100)` : "";
     const yaraNote = rules.length ? `; YARA: ${rules.join(", ")}` : "";
-    objects.push(indicator(`[file:hashes.'SHA-256' = '${fileHash}']`, `Analyzed sample ${report.file.name}${verdict}${yaraNote}`, now));
+    add(`[file:hashes.'SHA-256' = '${fileHash}']`, `Analyzed sample ${report.file.name}${verdict}${yaraNote}`);
   }
 
   return {

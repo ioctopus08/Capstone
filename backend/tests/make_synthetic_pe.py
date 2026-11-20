@@ -180,8 +180,17 @@ if __name__ == "__main__":
             "faktura odenis tesdiqi",
             "nazirlik elaqe formu",
             eicar,
+            # Host-based decoys (never used - the binary only returns):
+            "Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+            "Global\\IOCtopusDemoMutex_7f3a",
+            "%APPDATA%\\updater\\svchost32.exe",
+            "cmd.exe /c schtasks /create /tn Updater /tr %APPDATA%\\updater\\svchost32.exe",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) DemoBeacon/1.0",
         ],
-        decoy_strings_wide=["wide-string-indicator-update-portal-gov-az.test"],
+        decoy_strings_wide=[
+            "wide-string-indicator-update-portal-gov-az.test",
+            "HKEY_CURRENT_USER\\Software\\DemoDropper\\Config",
+        ],
         out_path=out,
     )
     print("wrote", out)
